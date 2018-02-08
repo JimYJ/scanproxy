@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"runtime"
 	"scanproxy/scanproxy"
 	"time"
 
@@ -22,7 +21,7 @@ var (
 )
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU())
+	// runtime.GOMAXPROCS(runtime.NumCPU())
 	// initDBConn()
 	// ch := make(chan map[string]int, 1)
 	// go scanproxy.CheckPort("192.168.10.242", 80, ch)
@@ -43,27 +42,29 @@ func scanAllPort(iplist []string) {
 	ch := make(chan map[string]int, 3000)
 	var portOkList []map[string]int
 	var stepmax int
-	max := 65535
 	step := 25
 	var results map[string]int
-	for i := 1; i <= max; i++ {
-		if (i + step) < max {
+	for i := 1; i <= portMax; i++ {
+		if (i + step) < portMax {
 			stepmax = i + step
 		} else {
-			stepmax = max
+			stepmax = portMax
 		}
 		//分阶段扫描端口
 		for n := i; n <= stepmax; n++ {
 			//循环处理IP段
+			// log.Println("scan port:", i)
 			for j := len(iplist) - 1; j > 0; j-- {
 				// log.Println(iplist[j], i, ch)
-				go scanproxy.CheckPort(iplist[j], i, ch)
+				go scanproxy.CheckPort(iplist[j], n, ch)
+				time.Sleep(1 * time.Millisecond)
 			}
 			i = n
 		}
 		//分阶段回收被BLOCK的协程
 		for m := 0; m <= ((len(iplist) - 2) * step); m++ {
 			results = <-ch
+			// log.Println(results)
 			if results != nil {
 				portOkList = append(portOkList, results)
 			}
