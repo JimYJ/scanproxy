@@ -1,9 +1,10 @@
 package scanproxy
 
 import (
-	"time"
+	"fmt"
 	"log"
 	"net"
+	"time"
 )
 
 //CheckPort 查询端口是否开放
@@ -13,11 +14,12 @@ func CheckPort(ipstr string, port int, ch chan map[string]int) {
 		log.Println("error IP format:", ipstr)
 		ch <- nil
 	}
-	tcpAddr := net.TCPAddr{
-		IP:   ip,
-		Port: port,
-	}
-	conn, err := net.DialTimeout(network, address, 30*time.S)("tcp", nil, &tcpAddr)
+	// tcpAddr := net.TCPAddr{
+	// 	IP:   ip,
+	// 	Port: port,
+	// }
+	address := fmt.Sprintf("%v:%v", ip, port)
+	conn, err := net.DialTimeout("tcp", address, 30*time.Second) //("tcp", nil, &tcpAddr)
 	if err == nil {
 		log.Println("open IP & port", ip, port)
 		conn.Close()
