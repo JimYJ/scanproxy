@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"runtime"
 	"scanproxy/scanproxy"
 	"time"
 
@@ -17,7 +18,7 @@ var (
 	charset      = "utf8mb4"
 	maxIdleConns = 500
 	maxOpenConns = 500
-	portMax      = 65535
+	portMax      = 500
 )
 
 func main() {
@@ -39,6 +40,7 @@ func initDBConn() {
 }
 
 func scanAllPort(iplist []string) {
+	log.Println("now goroutine:", runtime.NumGoroutine())
 	ch := make(chan map[string]int, 3000)
 	var portOkList []map[string]int
 	var stepmax int
@@ -62,14 +64,16 @@ func scanAllPort(iplist []string) {
 			i = n
 		}
 		//分阶段回收被BLOCK的协程
-		for m := 0; m <= ((len(iplist) - 2) * step); m++ {
-			results = <-ch
-			// log.Println(results)
+		// for m := 0; m <= ((len(iplist) - 2) * step); m++ {
+		for value := range ch {
+			// log.Println(value)
 			if results != nil {
-				portOkList = append(portOkList, results)
+				portOkList = append(portOkList, value)
 			}
 		}
+		log.Println("now goroutine:", runtime.NumGoroutine())
 		time.Sleep(1 * time.Second)
 	}
 	log.Println(portOkList)
+	log.Println("now goroutine:", runtime.NumGoroutine())
 }
