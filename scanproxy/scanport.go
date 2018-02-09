@@ -23,7 +23,7 @@ func CheckPort(ipstr string, port int, ch chan map[string]int) {
 	if err == nil {
 		log.Println("open IP & port", ip, port)
 		conn.Close()
-		ch <- map[string]int{string(ip): port}
+		ch <- map[string]int{string(ipstr): port}
 	} else {
 		// log.Println("scan port fail：", ipstr, port)
 		if conn != nil {
