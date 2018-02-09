@@ -49,7 +49,7 @@ func scanPort(iplist []string, startPort int, stepMax int) ([]map[string]int, in
 		// log.Println("scan port:", i)
 		for j := len(iplist) - 1; j > 0; j-- {
 			// log.Println(iplist[j], i, ch)
-			go scanproxy.CheckPort(iplist[j], n, ch)
+			go scanproxy.CheckPortBySyn(iplist[j], n, ch)
 			time.Sleep(1 * time.Millisecond)
 
 		}
