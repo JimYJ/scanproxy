@@ -14,19 +14,21 @@ var (
 	dbuser       = "root_xw"
 	dbpass       = "Xw_19920602_wX"
 	charset      = "utf8mb4"
-	maxIdleConns = 500
-	maxOpenConns = 500
+	maxIdleConns = 1000
+	maxOpenConns = 1000
 )
 
 func main() {
 	// runtime.GOMAXPROCS(runtime.NumCPU())
-	// initDBConn()
 	// ch := make(chan map[string]int, 1)
 	// go scanproxy.CheckPort("192.168.10.242", 80, ch)
 	// log.Println(<-ch)
-	iplist := scanproxy.GetIPtemp()
-	allPortOk := scanproxy.ScanAllPort(iplist)
-	log.Println(allPortOk)
+	// iplist, total, totalPage, err := scanproxy.GetApnicIP("CN", 1, 1)
+	// log.Println(iplist, total, totalPage, err)
+	// allPortOk := scanproxy.ScanAllPort(iplist)
+	// log.Println(allPortOk)
+	initDBConn()
+	scanproxy.InternetAllScan("CN")
 }
 
 func initDBConn() {

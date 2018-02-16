@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"strconv"
+	"strings"
 
 	"github.com/JimYJ/easysql/mysql"
 )
@@ -25,9 +26,9 @@ func GetApnicIP(area string, curPage int, prePage int) ([]map[string]string, int
 	}
 	var query string
 	if area != "" {
-		query = "select startip,endip from apniciplib where area = ?" + paginate
+		query = "select startip,area from apniciplib where area = ?" + paginate
 	} else {
-		query = "select startip,endip from apniciplib" + paginate
+		query = "select startip,area from apniciplib" + paginate
 	}
 	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area)
 	if err != nil {
@@ -49,10 +50,10 @@ func paginate(area string, curPage int, prePage int) (string, int, int) {
 		curPage = totalPage
 	}
 	if curPage == 0 || curPage == 1 {
-		return "limit 0," + string(prePage), ipCount, totalPage
+		return " limit 0," + strconv.Itoa(prePage), ipCount, totalPage
 	}
 	start := (curPage - 1) * prePage
-	return "limit " + string(start) + "," + string(prePage), ipCount, totalPage
+	return " limit " + strconv.Itoa(start) + "," + strconv.Itoa(prePage), ipCount, totalPage
 }
 
 func getTotalPage(prePage int) int {
@@ -83,8 +84,8 @@ func GetIPCount(area string) error {
 	return nil
 }
 
-//GetIPtemp 获取内网IP列表
-func GetIPtemp() []string {
+//GetIPLocalNetwork 获取内网IP列表
+func GetIPLocalNetwork() []string {
 	var a int
 	var iplist = make([]string, 255)
 	for i := 1; i < 256; i++ {
@@ -92,4 +93,16 @@ func GetIPtemp() []string {
 		iplist[a] = "192.168.10." + strconv.Itoa(i)
 	}
 	return iplist
+}
+
+func formatInternetIPList(ipsatrt string) *[]string {
+	var a int
+	var iplist = make([]string, 255)
+	b := strings.Split(ipsatrt, ".")
+	c := strings.Join(b[0:len(b)-2], ".")
+	for i := 1; i < 256; i++ {
+		a = i - 1
+		iplist[a] = c + "." + strconv.Itoa(i)
+	}
+	return &iplist
 }

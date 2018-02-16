@@ -12,10 +12,11 @@ import (
 var (
 	checkPortTimeout = 2 * time.Second
 	portMax          = 65535
+	step             = 25
 )
 
-//CheckPort 查询端口是否开放
-func CheckPort(ipstr string, port int, ch chan map[string]int) {
+//checkPort 查询端口是否开放
+func checkPort(ipstr string, port int, ch chan map[string]int) {
 	ip := net.ParseIP(ipstr)
 	if ip == nil {
 		log.Println("error IP format:", ipstr)
@@ -40,8 +41,8 @@ func CheckPort(ipstr string, port int, ch chan map[string]int) {
 	}
 }
 
-//CheckPortBySyn syn方式查询端口是否开放，仅支持linux2.4+
-func CheckPortBySyn(ipstr string, port int, ch chan map[string]int) {
+//checkPortBySyn syn方式查询端口是否开放，仅支持linux2.4+
+func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
 	ip := net.ParseIP(ipstr)
 	if ip == nil {
 		log.Println("error IP format:", ipstr)
@@ -60,7 +61,7 @@ func CheckPortBySyn(ipstr string, port int, ch chan map[string]int) {
 		ch <- nil
 	case nil:
 		log.Println("open IP & port", ip, port)
-		ch <- map[string]int{string(ipstr): port}
+		ch <- map[string]int{ipstr: port}
 	default:
 		// if e, ok := err.(*tcp.ErrConnect); ok {
 		// 	fmt.Println("Connect to host failed:", e)
@@ -71,7 +72,7 @@ func CheckPortBySyn(ipstr string, port int, ch chan map[string]int) {
 	}
 }
 
-func scanPort(iplist []string, startPort int, stepMax int) ([]map[string]int, int) {
+func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, int) {
 	ch := make(chan map[string]int, 1000)
 	var portOkList []map[string]int
 	var value map[string]int
@@ -79,16 +80,15 @@ func scanPort(iplist []string, startPort int, stepMax int) ([]map[string]int, in
 	for n := startPort; n <= stepMax; n++ {
 		//循环处理IP段
 		// log.Println("scan port:", i)
-		for j := len(iplist) - 1; j > 0; j-- {
+		for j := len(*iplist) - 1; j > 0; j-- {
 			// log.Println(iplist[j], i, ch)
-			go CheckPortBySyn(iplist[j], n, ch)
+			go checkPortBySyn((*iplist)[j], n, ch)
 			time.Sleep(1 * time.Millisecond)
-
 		}
 	}
 	//分阶段回收被BLOCK的协程
 	step := stepMax - startPort
-	for m := 0; m <= ((len(iplist) - 2) * step); m++ {
+	for m := 0; m <= ((len(*iplist) - 2) * step); m++ {
 		// for value := range ch {
 		value = <-ch
 		// log.Println(value)
@@ -98,13 +98,12 @@ func scanPort(iplist []string, startPort int, stepMax int) ([]map[string]int, in
 	}
 	time.Sleep(1 * time.Second)
 	close(ch)
-	return portOkList, stepMax
+	return &portOkList, stepMax
 }
 
 //ScanAllPort 分段扫描65535全部端口
-func ScanAllPort(iplist []string) []map[string]int {
-	step := 25
-	var stepMax, endPort int
+func ScanAllPort(iplist *[]string) *[]map[string]int {
+	var stepMax int
 	var portOkList []map[string]int
 	for i := 1; i <= portMax; i++ {
 		if (step + i) > portMax {
@@ -112,9 +111,38 @@ func ScanAllPort(iplist []string) []map[string]int {
 		} else {
 			stepMax = step + i
 		}
-		portOkList, endPort = scanPort(iplist, i, stepMax)
+		portOpen, endPort := scanPort(iplist, i, stepMax)
 		i = endPort
+		if portOpen != nil {
+			portOkList = append(portOkList, (*portOpen)...)
+		}
 		// log.Println(portOkList)
 	}
-	return portOkList
+	return &portOkList
+}
+
+//InternetAllScan 全部IP或指定区域IP扫描全端口
+func InternetAllScan(area string) {
+	totalPage := 1
+	var ipmap []map[string]string
+	var err error
+	for i := 1; i <= totalPage; i++ {
+		ipmap, _, totalPage, err = GetApnicIP(area, i, 1)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		startip := ipmap[0]["startip"]
+		getArea := ipmap[0]["area"]
+		iplist := formatInternetIPList(startip)
+		portOpenList := ScanAllPort(iplist)
+		proxyList := checkHTTPForList(portOpenList)
+		if proxyList != nil {
+			saveProxy(proxyList, getArea)
+		}
+	}
+}
+
+//InternetFastScan 常用代理端口快速扫描
+func InternetFastScan(area string) {
+
 }

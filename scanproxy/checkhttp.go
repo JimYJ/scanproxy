@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -15,8 +16,8 @@ var (
 	testKeyWord = "网易免费邮箱"
 )
 
-//CheckHTTP 测试是否是HTTP代理服务器
-func CheckHTTP(ip string, port int, protocol string) bool {
+//checkHTTP 测试是否是HTTP代理服务器
+func checkHTTP(ip string, port int, protocol string) bool {
 	strURL := fmt.Sprintf("%v://%v:%v", protocol, ip, port)
 	proxyURL, err := url.Parse(strURL)
 	if err == nil {
@@ -38,4 +39,23 @@ func CheckHTTP(ip string, port int, protocol string) bool {
 		}
 	}
 	return false
+}
+
+func checkHTTPForList(iplist *[]map[string]int) *[]map[string]string {
+	var proxyOK []map[string]string
+	for i := 0; i < len(*iplist); i++ {
+		var ip string
+		var port int
+		for k, v := range (*iplist)[i] {
+			if checkHTTP(ip, port, "http") {
+				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "http"}
+				proxyOK = append(proxyOK, proxy)
+			}
+			if checkHTTP(ip, port, "https") {
+				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "https"}
+				proxyOK = append(proxyOK, proxy)
+			}
+		}
+	}
+	return &proxyOK
 }
