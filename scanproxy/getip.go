@@ -99,7 +99,7 @@ func formatInternetIPList(ipsatrt string) *[]string {
 	var a int
 	var iplist = make([]string, 255)
 	b := strings.Split(ipsatrt, ".")
-	c := strings.Join(b[0:len(b)-2], ".")
+	c := strings.Join(b[0:len(b)-1], ".")
 	for i := 1; i < 256; i++ {
 		a = i - 1
 		iplist[a] = c + "." + strconv.Itoa(i)
