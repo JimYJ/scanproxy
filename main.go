@@ -13,9 +13,9 @@ var (
 	dbname       = ""
 	dbuser       = ""
 	dbpass       = ""
-	charset      = "utf8mb4"
-	maxIdleConns = 1000
-	maxOpenConns = 1000
+	charset      = ""
+	maxIdleConns = 500
+	maxOpenConns = 500
 )
 
 func main() {

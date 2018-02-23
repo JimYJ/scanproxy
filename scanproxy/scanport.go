@@ -133,6 +133,7 @@ func InternetAllScan(area string) {
 		}
 		startip := ipmap[0]["startip"]
 		getArea := ipmap[0]["area"]
+		log.Println("start scan IP:", startip)
 		iplist := formatInternetIPList(startip)
 		portOpenList := ScanAllPort(iplist)
 		proxyList := checkHTTPForList(portOpenList)
