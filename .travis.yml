@@ -3,5 +3,3 @@ go:
   - 1.9
   - 1.8
   - 1.7
-install:
-  - go get -t -v ./...
