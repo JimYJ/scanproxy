@@ -3,6 +3,7 @@ package scanproxy
 import (
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,9 +12,9 @@ import (
 )
 
 var (
-	timeouts    = 5
-	testWeb     = "https://email.163.com"
-	testKeyWord = "网易免费邮箱"
+	timeouts    = 10
+	testWeb     = "http://auto.163.com"
+	testKeyWord = "auto.163.com"
 )
 
 //checkHTTP 测试是否是HTTP代理服务器
@@ -28,7 +29,6 @@ func checkHTTP(ip string, port int, protocol string) bool {
 			Timeout: time.Duration(timeouts) * time.Second,
 		}
 		resp, err := client.Get(testWeb)
-		defer resp.Body.Close()
 		if err == nil {
 			if resp.StatusCode == http.StatusOK {
 				body, err := ioutil.ReadAll(resp.Body)
@@ -36,22 +36,25 @@ func checkHTTP(ip string, port int, protocol string) bool {
 					return true
 				}
 			}
+		} else {
+			if resp != nil {
+				defer resp.Body.Close()
+			}
+			log.Println(err)
 		}
 	}
 	return false
 }
 
-func checkHTTPForList(iplist *[]map[string]int) *[]map[string]string {
+func CheckHTTPForList(iplist *[]map[string]int) *[]map[string]string {
 	var proxyOK []map[string]string
 	for i := 0; i < len(*iplist); i++ {
-		var ip string
-		var port int
 		for k, v := range (*iplist)[i] {
-			if checkHTTP(ip, port, "http") {
+			if checkHTTP(k, v, "http") {
 				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "http"}
 				proxyOK = append(proxyOK, proxy)
 			}
-			if checkHTTP(ip, port, "https") {
+			if checkHTTP(k, v, "https") {
 				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "https"}
 				proxyOK = append(proxyOK, proxy)
 			}

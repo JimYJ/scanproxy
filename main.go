@@ -19,14 +19,6 @@ var (
 )
 
 func main() {
-	// runtime.GOMAXPROCS(runtime.NumCPU())
-	// ch := make(chan map[string]int, 1)
-	// go scanproxy.CheckPort("192.168.10.242", 80, ch)
-	// log.Println(<-ch)
-	// iplist, total, totalPage, err := scanproxy.GetApnicIP("CN", 1, 1)
-	// log.Println(iplist, total, totalPage, err)
-	// allPortOk := scanproxy.ScanAllPort(iplist)
-	// log.Println(allPortOk)
 	initDBConn()
 	scanproxy.InternetAllScan("CN")
 }
