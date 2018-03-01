@@ -4,9 +4,10 @@ import (
 	"errors"
 	"github.com/JimYJ/easysql/mysql"
 	"log"
+	"time"
 )
 
-func saveProxy(proxyList *[]map[string]string, area string) (bool, error) {
+func SaveProxy(proxyList *[]map[string]string, area string) (bool, error) {
 	if proxyList == nil {
 		return false, errors.New("proxyList is nil")
 	}
@@ -17,8 +18,9 @@ func saveProxy(proxyList *[]map[string]string, area string) (bool, error) {
 	mysqlDB.TxBegin()
 	rollBack := false
 	var err2 error
+	nowTime := time.Now().Local().Format("2006-01-02 15:04:05")
 	for i := 0; i < len(*proxyList); i++ {
-		_, err2 = mysqlDB.TxInsert(mysql.Statement, "insert into proxyip set ip = ?,port = ?,protocol = ?,area = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"], area)
+		_, err2 = mysqlDB.TxInsert(mysql.Statement, "insert into proxyip set ip = ?,port = ?,protocol = ?,area = ?,status = ?,createtime = ?,updatetime = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"], area, 1, nowTime, nowTime)
 		if err2 != nil {
 			rollBack = true
 		}

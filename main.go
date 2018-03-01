@@ -20,7 +20,7 @@ var (
 
 func main() {
 	initDBConn()
-	scanproxy.InternetAllScan("CN")
+	scanproxy.InternetAllScan("KR")
 }
 
 func initDBConn() {

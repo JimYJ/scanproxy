@@ -58,6 +58,7 @@ func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
 	switch err {
 	case tcp.ErrTimeout:
 		// fmt.Println("Connect to host timed out")
+		// log.Println(ipstr, port, err)
 		ch <- nil
 	case nil:
 		log.Println("open IP & port", ip, port)
@@ -76,19 +77,23 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 	ch := make(chan map[string]int, 1000)
 	var portOkList []map[string]int
 	var value map[string]int
+	i := 0
 	//分阶段扫描端口
 	for n := startPort; n <= stepMax; n++ {
 		//循环处理IP段
-		// log.Println("scan port:", i)
+		log.Println("scan port:", n)
 		for j := len(*iplist) - 1; j > 0; j-- {
 			// log.Println(iplist[j], i, ch)
 			go checkPortBySyn((*iplist)[j], n, ch)
 			time.Sleep(1 * time.Millisecond)
+			i++
 		}
 	}
 	//分阶段回收被BLOCK的协程
-	step := stepMax - startPort
-	for m := 0; m <= ((len(*iplist) - 2) * step); m++ {
+	// step := stepMax - startPort
+	// lenList := (len(*iplist) - 2) * step
+	time.Sleep(2 * time.Second)
+	for m := 1; m <= i; m++ {
 		// for value := range ch {
 		value = <-ch
 		// log.Println(value)
@@ -96,7 +101,6 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 			portOkList = append(portOkList, value)
 		}
 	}
-	time.Sleep(1 * time.Second)
 	close(ch)
 	return &portOkList, stepMax
 }
@@ -135,13 +139,13 @@ func InternetAllScan(area string) {
 		getArea := ipmap[0]["area"]
 		log.Println("start scan IP:", startip)
 		iplist := formatInternetIPList(startip)
+		portOpenList := ScanAllPort(iplist)
 		go func() {
-			portOpenList := ScanAllPort(iplist)
 			httpProxy := CheckHTTPForList(portOpenList)
 			socksProxy := CheckSocksForList(portOpenList)
 			allproxyList := append((*httpProxy), (*socksProxy)...)
 			if allproxyList != nil {
-				saveProxy(&allproxyList, getArea)
+				SaveProxy(&allproxyList, getArea)
 			}
 		}()
 	}
