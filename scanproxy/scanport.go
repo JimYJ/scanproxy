@@ -92,7 +92,7 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 	//分阶段回收被BLOCK的协程
 	// step := stepMax - startPort
 	// lenList := (len(*iplist) - 2) * step
-	time.Sleep(2 * time.Second)
+	// time.Sleep(2 * time.Second)
 	for m := 1; m <= i; m++ {
 		// for value := range ch {
 		value = <-ch
