@@ -83,7 +83,7 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 		// log.Println("scan port:", n)
 		for j := len(*iplist) - 1; j >= 0; j-- {
 			go checkPortBySyn((*iplist)[j], n, ch)
-			// time.Sleep(1 * time.Millisecond)
+			time.Sleep(1 * time.Microsecond)
 			i++
 		}
 	}
@@ -128,7 +128,7 @@ func InternetAllScan(area string) {
 	var err error
 	var iplist []string
 	for i := 1; i <= totalPage; i++ {
-		ipmap, _, totalPage, err = GetApnicIP(area, i, 100)
+		ipmap, _, totalPage, err = GetApnicIP(area, i, 25)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -151,6 +151,6 @@ func InternetAllScan(area string) {
 }
 
 //InternetFastScan 常用代理端口快速扫描
-// func InternetFastScan(area string) {
+func InternetFastScan(area string) {
 
-// }
+}
