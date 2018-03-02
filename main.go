@@ -1,9 +1,9 @@
 package main
 
 import (
+	"github.com/JimYJ/scanproxy/scanproxy"
 	"log"
 	"os"
-	"scanproxy/scanproxy"
 	"strconv"
 
 	"github.com/JimYJ/easysql/mysql"
