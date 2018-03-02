@@ -135,13 +135,13 @@ func InternetAllScan(area string) {
 		getArea := ipmap[0]["area"]
 		log.Println("start scan IP:", startip)
 		iplist := formatInternetIPList(startip)
+		portOpenList := ScanAllPort(iplist)
 		go func() {
-			portOpenList := ScanAllPort(iplist)
 			httpProxy := CheckHTTPForList(portOpenList)
 			socksProxy := CheckSocksForList(portOpenList)
 			allproxyList := append((*httpProxy), (*socksProxy)...)
 			if allproxyList != nil {
-				saveProxy(&allproxyList, getArea)
+				SaveProxy(&allproxyList, getArea)
 			}
 		}()
 	}
