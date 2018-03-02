@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	checkPortTimeout = 2 * time.Second
+	checkPortTimeout = 5 * time.Second
 	portMax          = 65535
 	step             = 1
+	fastPort         = [...]int{3128, 8000, 8888, 8080, 8088, 1080, 9000, 80, 8118, 53281, 54566, 808, 443, 8081, 8118, 65103, 3333, 45619, 65205, 45619, 55379, 65535, 2855, 10200, 22722, 64334, 3654, 53124, 5433}
 )
 
 //checkPort 查询端口是否开放
@@ -83,7 +84,7 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 		// log.Println("scan port:", n)
 		for j := len(*iplist) - 1; j >= 0; j-- {
 			go checkPortBySyn((*iplist)[j], n, ch)
-			time.Sleep(1 * time.Microsecond)
+			time.Sleep(1 * time.Millisecond)
 			i++
 		}
 	}
@@ -122,13 +123,13 @@ func ScanAllPort(iplist *[]string) *[]map[string]int {
 }
 
 //InternetAllScan 全部IP或指定区域IP扫描全端口
-func InternetAllScan(area string) {
+func InternetAllScan(area string, ipStep int) {
 	totalPage := 1
 	var ipmap *[]map[string]string
 	var err error
 	var iplist []string
 	for i := 1; i <= totalPage; i++ {
-		ipmap, _, totalPage, err = GetApnicIP(area, i, 25)
+		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -152,5 +153,29 @@ func InternetAllScan(area string) {
 
 //InternetFastScan 常用代理端口快速扫描
 func InternetFastScan(area string) {
-
+	totalPage := 1
+	var ipmap *[]map[string]string
+	var err error
+	var iplist []string
+	for i := 1; i <= totalPage; i++ {
+		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		getArea := (*ipmap)[0]["area"]
+		for i := 0; i < len(*ipmap); i++ {
+			startip := (*ipmap)[i]["startip"]
+			log.Println("start scan IP:", startip)
+			iplist = append(iplist, formatInternetIPList(startip)...)
+		}
+		portOpenList := ScanAllPort(&iplist)
+		go func() {
+			httpProxy := checkHTTPForList(portOpenList)
+			socksProxy := checkSocksForList(portOpenList)
+			allproxyList := append((*httpProxy), (*socksProxy)...)
+			if allproxyList != nil {
+				saveProxy(&allproxyList, getArea)
+			}
+		}()
+	}
 }

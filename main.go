@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 	"scanproxy/scanproxy"
+	"strconv"
 
 	"github.com/JimYJ/easysql/mysql"
 )
@@ -16,6 +18,7 @@ var (
 	charset      = "utf8mb4"
 	maxIdleConns = 500
 	maxOpenConns = 500
+	ipStep       = 10
 )
 
 func main() {
@@ -37,8 +40,15 @@ func main() {
 	// log.Println(scanproxy.CheckSocks5("23.254.153.205", 25357, "tcp"))
 	// c, err := scanproxy.SaveProxy(b, "JP")
 	// log.Println(c, err)
+	mode = os.Args[1]
+	ipstep, err = strconv.Atoi(os.Args[2])
+	if err != nil {
+		ipstep = IPSipSteptep
+	}
+
 	initDBConn()
-	scanproxy.InternetAllScan("KR")
+	scanproxy.InternetAllScan("CN", ipstep)
+
 }
 
 func initDBConn() {
