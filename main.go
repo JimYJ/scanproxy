@@ -38,7 +38,7 @@ func main() {
 	// c, err := scanproxy.SaveProxy(b, "JP")
 	// log.Println(c, err)
 	initDBConn()
-	scanproxy.InternetAllScan("CN")
+	scanproxy.InternetAllScan("KR")
 }
 
 func initDBConn() {
