@@ -2,12 +2,13 @@ package scanproxy
 
 import (
 	"errors"
-	"github.com/JimYJ/easysql/mysql"
 	"log"
 	"time"
+
+	"github.com/JimYJ/easysql/mysql"
 )
 
-func SaveProxy(proxyList *[]map[string]string, area string) (bool, error) {
+func saveProxy(proxyList *[]map[string]string, area string) (bool, error) {
 	if proxyList == nil {
 		return false, errors.New("proxyList is nil")
 	}
@@ -30,5 +31,6 @@ func SaveProxy(proxyList *[]map[string]string, area string) (bool, error) {
 		return false, err2
 	}
 	mysqlDB.TxCommit()
+	log.Println("save proxy:", proxyList)
 	return true, nil
 }

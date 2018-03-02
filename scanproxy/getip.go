@@ -15,7 +15,7 @@ var (
 )
 
 //GetApnicIP 获取可扫描IP列表
-func GetApnicIP(area string, curPage int, prePage int) ([]map[string]string, int, int, error) {
+func GetApnicIP(area string, curPage int, prePage int) (*[]map[string]string, int, int, error) {
 	mysqlConn, err := mysql.GetMysqlConn()
 	if err != nil {
 		return nil, 0, 0, err
@@ -34,7 +34,7 @@ func GetApnicIP(area string, curPage int, prePage int) ([]map[string]string, int
 	if err != nil {
 		return nil, 0, 0, err
 	}
-	return iplist, total, totalPage, nil
+	return &iplist, total, totalPage, nil
 }
 
 func paginate(area string, curPage int, prePage int) (string, int, int) {
@@ -95,14 +95,12 @@ func GetIPLocalNetwork() []string {
 	return iplist
 }
 
-func formatInternetIPList(ipsatrt string) *[]string {
-	var a int
-	var iplist = make([]string, 255)
+func formatInternetIPList(ipsatrt string) []string {
+	var iplist = make([]string, 0)
 	b := strings.Split(ipsatrt, ".")
 	c := strings.Join(b[0:len(b)-1], ".")
-	for i := 1; i < 256; i++ {
-		a = i - 1
-		iplist[a] = c + "." + strconv.Itoa(i)
+	for i := 1; i <= 254; i++ {
+		iplist = append(iplist, c+"."+strconv.Itoa(i))
 	}
-	return &iplist
+	return iplist
 }

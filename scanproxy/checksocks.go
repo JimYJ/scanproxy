@@ -64,7 +64,7 @@ func CheckSocks5(ip string, port int, protocol string) bool {
 	return false
 }
 
-func CheckSocksForList(iplist *[]map[string]int) *[]map[string]string {
+func checkSocksForList(iplist *[]map[string]int) *[]map[string]string {
 	var proxyOK []map[string]string
 	for i := 0; i < len(*iplist); i++ {
 		for k, v := range (*iplist)[i] {

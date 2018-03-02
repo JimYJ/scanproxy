@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 	"scanproxy/scanproxy"
+	"strconv"
 
 	"github.com/JimYJ/easysql/mysql"
 )
@@ -16,11 +18,41 @@ var (
 	charset      = ""
 	maxIdleConns = 500
 	maxOpenConns = 500
+	ipStep       = 10
+	area         string
 )
 
 func main() {
+	var ipstep int
+	var err error
+	var mode string
+	if len(os.Args) >= 2 {
+		mode = os.Args[1]
+	} else {
+		mode = ""
+	}
+	if len(os.Args) >= 3 {
+		ipstep, err = strconv.Atoi(os.Args[2])
+		if err != nil {
+			ipstep = ipStep
+		}
+	} else {
+		ipstep = ipStep
+	}
+	if len(os.Args) >= 4 {
+		area = os.Args[3]
+	} else {
+		area = ""
+	}
+
 	initDBConn()
-	scanproxy.InternetAllScan("KR")
+	if mode == "-fast" {
+		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area)
+		scanproxy.InternetFastScan(area, ipstep)
+	} else {
+		log.Println("now work in normal mode,ip scan step:", ipstep, "area:", area)
+		scanproxy.InternetAllScan(area, ipstep)
+	}
 }
 
 func initDBConn() {
