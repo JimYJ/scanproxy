@@ -16,7 +16,7 @@ var (
 	portMax          = 65535
 	step             = 1
 	once             sync.Once
-	queueMax         = 100
+	queueMax         = 200
 	fastScanPort     = [...]int{3128, 8000, 8888, 8080, 8088, 1080, 9000, 80, 8118, 53281, 54566, 808, 443, 8081, 8118, 65103, 3333, 45619, 65205, 45619, 55379, 65535, 2855, 10200, 22722, 64334, 3654, 53124, 5433}
 )
 
@@ -77,7 +77,7 @@ func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
 	}
 }
 
-//checkPortBySynForQueue syn方式查询端口是否开放，仅支持linux2.4+ 队列使用函数
+//checkPortBySynForQueue syn方式查询端口是否开放，仅支持linux2.4+ 队列专用函数
 func checkPortBySynForQueue(value ...interface{}) {
 	if len(value) < 3 {
 		return
@@ -164,8 +164,8 @@ func ScanAllPort(iplist *[]string) *[]map[string]int {
 }
 
 //ScanFastPort 快速扫描常用端口,将结果发送到队列
-func ScanFastPort(iplist *[]string, getArea string) {
-	ch := make(chan map[string]int, queueMax)
+func ScanFastPort(iplist *[]string, getArea string, ch chan map[string]int) {
+	listenQueueResults(ch, getArea)
 	for n := 0; n <= len(fastScanPort)-1; n++ {
 		// log.Println("scan port:", n)
 		for j := len(*iplist) - 1; j >= 0; j-- {
@@ -177,7 +177,6 @@ func ScanFastPort(iplist *[]string, getArea string) {
 			// time.Sleep(1 * time.Second)
 		}
 	}
-	listenQueueResults(ch, getArea)
 }
 
 func listenQueueResults(ch chan map[string]int, getArea string) {
@@ -217,6 +216,7 @@ func InternetAllScan(area string, ipStep int) {
 	var err error
 	var iplist []string
 	for i := 1; i <= totalPage; i++ {
+		iplist = make([]string, 0)
 		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
 		if err != nil {
 			log.Fatalln(err)
@@ -246,7 +246,9 @@ func InternetFastScan(area string, ipStep int) {
 	var err error
 	var iplist []string
 	queue.InitQueue(queueMax, false)
+	ch := make(chan map[string]int, queueMax)
 	for i := 1; i <= totalPage; i++ {
+		iplist = make([]string, 0)
 		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
 		if err != nil {
 			log.Fatalln(err)
@@ -257,6 +259,6 @@ func InternetFastScan(area string, ipStep int) {
 			log.Println("start fast scan IP:", startip)
 			iplist = append(iplist, formatInternetIPList(startip)...)
 		}
-		ScanFastPort(&iplist, getArea)
+		ScanFastPort(&iplist, getArea, ch)
 	}
 }
