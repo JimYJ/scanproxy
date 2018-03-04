@@ -35,7 +35,7 @@ func checkHTTP(ip string, port int, protocol string) bool {
 		if err2 == nil {
 			if resp.StatusCode == http.StatusOK {
 				body, err3 := ioutil.ReadAll(resp.Body)
-				log.Println(string(body))
+				// log.Println(string(body))
 				if err3 == nil && strings.Contains(string(body), testKeyWord) {
 					return true
 				}
