@@ -26,6 +26,7 @@ func main() {
 	var ipstep int
 	var err error
 	var mode string
+	var maxConcurrent string
 	if len(os.Args) >= 2 {
 		mode = os.Args[1]
 	} else {
@@ -44,10 +45,15 @@ func main() {
 	} else {
 		area = ""
 	}
-
 	initDBConn()
-	if mode == "-fast" {
-		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area)
+	if mode == "-f" {
+		if len(os.Args) >= 5 {
+			maxConcurrent = os.Args[4]
+		} else {
+			maxConcurrent = "200"
+		}
+		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area, "maxConcurrent:", maxConcurrent)
+		scanproxy.SetQueueMaxConcurrent(maxConcurrent)
 		scanproxy.InternetFastScan(area, ipstep)
 	} else {
 		log.Println("now work in normal mode,ip scan step:", ipstep, "area:", area)

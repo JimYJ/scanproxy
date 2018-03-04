@@ -14,8 +14,8 @@ var (
 	ipCount = 0
 )
 
-//GetApnicIP 获取可扫描IP列表
-func GetApnicIP(area string, curPage int, prePage int) (*[]map[string]string, int, int, error) {
+//getApnicIP 获取可扫描IP列表
+func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, int, int, error) {
 	mysqlConn, err := mysql.GetMysqlConn()
 	if err != nil {
 		return nil, 0, 0, err
@@ -39,7 +39,7 @@ func GetApnicIP(area string, curPage int, prePage int) (*[]map[string]string, in
 
 func paginate(area string, curPage int, prePage int) (string, int, int) {
 	if ipCount == 0 {
-		GetIPCount(area)
+		getIPCount(area)
 		if ipCount == 0 {
 			log.Println("area is error!")
 			return "", 0, 0
@@ -64,8 +64,8 @@ func getTotalPage(prePage int) int {
 	return totalPage
 }
 
-//GetIPCount 获取IP总数
-func GetIPCount(area string) error {
+//getIPCount 获取IP总数
+func getIPCount(area string) error {
 	mysqlConn, err := mysql.GetMysqlConn()
 	if err != nil {
 		return err
@@ -84,8 +84,8 @@ func GetIPCount(area string) error {
 	return nil
 }
 
-//GetIPLocalNetwork 获取内网IP列表
-func GetIPLocalNetwork() []string {
+//getIPLocalNetwork 获取内网IP列表
+func getIPLocalNetwork() []string {
 	var a int
 	var iplist = make([]string, 255)
 	for i := 1; i < 256; i++ {

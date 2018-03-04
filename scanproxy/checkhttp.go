@@ -13,8 +13,8 @@ import (
 
 var (
 	timeouts    = 10
-	testWeb     = "http://auto.163.com"
-	testKeyWord = "auto.163.com"
+	testWeb     = "http://cn.ssgdfm.com/shop/main"
+	testKeyWord = "SKINSEGAE"
 )
 
 //checkHTTP 测试是否是HTTP代理服务器
@@ -28,20 +28,24 @@ func checkHTTP(ip string, port int, protocol string) bool {
 			},
 			Timeout: time.Duration(timeouts) * time.Second,
 		}
-		resp, err := client.Get(testWeb)
-		if err == nil {
+		resp, err2 := client.Get(testWeb)
+		if resp != nil {
+			defer resp.Body.Close()
+		}
+		if err2 == nil {
 			if resp.StatusCode == http.StatusOK {
-				body, err := ioutil.ReadAll(resp.Body)
-				if err == nil && strings.Contains(string(body), testKeyWord) {
+				body, err3 := ioutil.ReadAll(resp.Body)
+				log.Println(string(body))
+				if err3 == nil && strings.Contains(string(body), testKeyWord) {
 					return true
 				}
+				log.Println("err3:", err3)
 			}
 		} else {
-			if resp != nil {
-				defer resp.Body.Close()
-			}
-			log.Println(err)
+			log.Println("err2:", err2)
 		}
+	} else {
+		log.Println("err:", err)
 	}
 	return false
 }

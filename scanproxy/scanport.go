@@ -5,6 +5,7 @@ import (
 	"github.com/JimYJ/go-queue"
 	"log"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
@@ -12,12 +13,12 @@ import (
 )
 
 var (
-	checkPortTimeout = 5 * time.Second
-	portMax          = 65535
-	step             = 1
-	once             sync.Once
-	queueMax         = 200
-	fastScanPort     = [...]int{3128, 8000, 8888, 8080, 8088, 1080, 9000, 80, 8118, 53281, 54566, 808, 443, 8081, 8118, 65103, 3333, 45619, 65205, 45619, 55379, 65535, 2855, 10200, 22722, 64334, 3654, 53124, 5433}
+	checkPortTimeout   = 5 * time.Second
+	portMax            = 65535
+	step               = 1
+	once               sync.Once
+	queueMaxConcurrent = 1000
+	fastScanPort       = [...]int{3128, 8000, 8888, 8080, 8088, 1080, 9000, 80, 8118, 53281, 54566, 808, 443, 8081, 8118, 65103, 3333, 45619, 65205, 45619, 55379, 65535, 2855, 10200, 22722, 64334, 3654, 53124, 5433}
 )
 
 //checkPort 查询端口是否开放
@@ -143,8 +144,8 @@ func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, 
 	return &portOkList, stepMax
 }
 
-//ScanAllPort 分段扫描65535全部端口
-func ScanAllPort(iplist *[]string) *[]map[string]int {
+//scanAllPort 分段扫描65535全部端口
+func scanAllPort(iplist *[]string) *[]map[string]int {
 	var stepMax int
 	var portOkList []map[string]int
 	for i := 0; i < len(fastScanPort); i++ {
@@ -163,8 +164,8 @@ func ScanAllPort(iplist *[]string) *[]map[string]int {
 	return &portOkList
 }
 
-//ScanFastPort 快速扫描常用端口,将结果发送到队列
-func ScanFastPort(iplist *[]string, getArea string, ch chan map[string]int) {
+//scanFastPort 快速扫描常用端口,将请求发送到队列
+func scanFastPort(iplist *[]string, getArea string, ch chan map[string]int) {
 	listenQueueResults(ch, getArea)
 	for n := 0; n <= len(fastScanPort)-1; n++ {
 		// log.Println("scan port:", n)
@@ -185,7 +186,7 @@ func listenQueueResults(ch chan map[string]int, getArea string) {
 			for {
 				// for value := range ch {
 				var portOkList []map[string]int
-				for i := 0; i < queueMax; i++ {
+				for i := 0; i < queueMaxConcurrent; i++ {
 					value := <-ch
 					// log.Println(value)
 					if value != nil {
@@ -217,7 +218,7 @@ func InternetAllScan(area string, ipStep int) {
 	var iplist []string
 	for i := 1; i <= totalPage; i++ {
 		iplist = make([]string, 0)
-		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
+		ipmap, _, totalPage, err = getApnicIP(area, i, ipStep)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -227,7 +228,7 @@ func InternetAllScan(area string, ipStep int) {
 			log.Println("start scan IP:", startip)
 			iplist = append(iplist, formatInternetIPList(startip)...)
 		}
-		portOpenList := ScanAllPort(&iplist)
+		portOpenList := scanAllPort(&iplist)
 		go func() {
 			httpProxy := checkHTTPForList(portOpenList)
 			socksProxy := checkSocksForList(portOpenList)
@@ -245,11 +246,11 @@ func InternetFastScan(area string, ipStep int) {
 	var ipmap *[]map[string]string
 	var err error
 	var iplist []string
-	queue.InitQueue(queueMax, false)
-	ch := make(chan map[string]int, queueMax)
+	queue.InitQueue(queueMaxConcurrent, false)
+	ch := make(chan map[string]int, queueMaxConcurrent)
 	for i := 1; i <= totalPage; i++ {
-		iplist = make([]string, 0)
-		ipmap, _, totalPage, err = GetApnicIP(area, i, ipStep)
+		iplist = nil
+		ipmap, _, totalPage, err = getApnicIP(area, i, ipStep)
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -259,6 +260,15 @@ func InternetFastScan(area string, ipStep int) {
 			log.Println("start fast scan IP:", startip)
 			iplist = append(iplist, formatInternetIPList(startip)...)
 		}
-		ScanFastPort(&iplist, getArea, ch)
+		scanFastPort(&iplist, getArea, ch)
 	}
+}
+
+//SetQueueMaxConcurrent 设置队列并发数
+func SetQueueMaxConcurrent(maxConcurrent string) {
+	mc, err := strconv.Atoi(maxConcurrent)
+	if err != nil || mc < 1 {
+		return
+	}
+	queueMaxConcurrent = mc
 }

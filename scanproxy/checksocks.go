@@ -13,8 +13,8 @@ import (
 	"h12.me/socks"
 )
 
-//CheckSocks 测试是否是SOCKS代理，支持SOCKS4,SOCKS4a,SOCKS5
-func CheckSocks(ip string, port int, protocol int) bool {
+//checkSocks 测试是否是SOCKS代理，支持SOCKS4,SOCKS4a,SOCKS5
+func checkSocks(ip string, port int, protocol int) bool {
 	strURL := fmt.Sprintf("%v:%v", ip, port)
 	client := http.Client{
 		Transport: &http.Transport{
@@ -39,8 +39,8 @@ func CheckSocks(ip string, port int, protocol int) bool {
 	return false
 }
 
-//CheckSocks5 测试是否是SOCKS5代理
-func CheckSocks5(ip string, port int, protocol string) bool {
+//checkSocks5 测试是否是SOCKS5代理
+func checkSocks5(ip string, port int, protocol string) bool {
 	strURL := fmt.Sprintf("%v:%v", ip, port)
 	dialer, err := proxy.SOCKS5(protocol, strURL, nil, proxy.Direct)
 	if err == nil {
@@ -68,15 +68,15 @@ func checkSocksForList(iplist *[]map[string]int) *[]map[string]string {
 	var proxyOK []map[string]string
 	for i := 0; i < len(*iplist); i++ {
 		for k, v := range (*iplist)[i] {
-			if CheckSocks(k, v, socks.SOCKS4) {
+			if checkSocks(k, v, socks.SOCKS4) {
 				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "socks4"}
 				proxyOK = append(proxyOK, proxy)
 			}
-			if CheckSocks(k, v, socks.SOCKS4A) {
+			if checkSocks(k, v, socks.SOCKS4A) {
 				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "socks4a"}
 				proxyOK = append(proxyOK, proxy)
 			}
-			if CheckSocks(k, v, socks.SOCKS5) {
+			if checkSocks(k, v, socks.SOCKS5) {
 				proxy := map[string]string{"ip": k, "port": strconv.Itoa(v), "protocol": "socks5"}
 				proxyOK = append(proxyOK, proxy)
 			}
