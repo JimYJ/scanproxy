@@ -2,12 +2,13 @@ package scanproxy
 
 import (
 	"fmt"
-	"github.com/JimYJ/go-queue"
 	"log"
 	"net"
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/JimYJ/go-queue"
 
 	tcp "github.com/tevino/tcp-shaker"
 )
@@ -223,8 +224,8 @@ func InternetAllScan(area string, ipStep int) {
 			log.Fatalln(err)
 		}
 		getArea := (*ipmap)[0]["area"]
-		for i := 0; i < len(*ipmap); i++ {
-			startip := (*ipmap)[i]["startip"]
+		for m := 0; m < len(*ipmap); m++ {
+			startip := (*ipmap)[m]["startip"]
 			log.Println("start scan IP:", startip)
 			iplist = append(iplist, formatInternetIPList(startip)...)
 		}
@@ -250,17 +251,23 @@ func InternetFastScan(area string, ipStep int) {
 	ch := make(chan map[string]int, queueMaxConcurrent)
 	for i := 1; i <= totalPage; i++ {
 		iplist = nil
-		ipmap, _, totalPage, err = getApnicIP(area, i, ipStep)
-		if err != nil {
-			log.Fatalln(err)
+		for j := 0; j < 10; j++ {
+			ipmap, _, totalPage, err = getApnicIP(area, i, ipStep)
+			if err != nil {
+				log.Println(err)
+			} else {
+				break
+			}
+			time.Sleep(10 * time.Second)
 		}
 		getArea := (*ipmap)[0]["area"]
-		for i := 0; i < len(*ipmap); i++ {
-			startip := (*ipmap)[i]["startip"]
+		for m := 0; m < len(*ipmap); m++ {
+			startip := (*ipmap)[m]["startip"]
 			log.Println("start fast scan IP:", startip)
 			iplist = append(iplist, formatInternetIPList(startip)...)
 		}
 		scanFastPort(&iplist, getArea, ch)
+		time.Sleep(15 * time.Second)
 	}
 }
 
