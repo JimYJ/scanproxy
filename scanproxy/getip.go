@@ -5,6 +5,7 @@ import (
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/JimYJ/easysql/mysql"
 )
@@ -25,14 +26,23 @@ func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, in
 		return nil, 0, 0, errors.New("area is error")
 	}
 	var query string
+	recordID, IPID := getRecord(mysqlConn, area)
 	if area != "" {
-		query = "select startip,area from apniciplib where area = ?" + paginate
+		query = "select id,startip,area from apniciplib where area = ? and id > ?" + paginate
 	} else {
-		query = "select startip,area from apniciplib" + paginate
+		query = "select id,startip,area from apniciplib id < ?" + paginate
 	}
-	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area)
+	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area, IPID)
 	if err != nil {
 		return nil, 0, 0, err
+	}
+	idstr := iplist[len(iplist)-1]["id"]
+	startIP := iplist[len(iplist)-1]["startip"]
+	id, err2 := strconv.Atoi(idstr)
+	if err2 == nil {
+		saveRecord(mysqlConn, id, recordID, startIP, area)
+	} else {
+		log.Println(err2)
 	}
 	return &iplist, total, totalPage, nil
 }
@@ -103,4 +113,49 @@ func formatInternetIPList(ipsatrt string) []string {
 		iplist = append(iplist, c+"."+strconv.Itoa(i))
 	}
 	return iplist
+}
+
+func saveRecord(mysqlConn *mysql.MysqlDB, id int, recordID int, startip string, area string) {
+	var query string
+	nowTime := time.Now().Local().Format("2006-01-02 15:04:05")
+	var err error
+	for i := 0; i < 3; i++ {
+		if recordID == 0 {
+			query = "insert scanrecord set ipid = ?,area = ?,createtime = ?,updatetime = ?,startip = ?"
+			_, err = mysqlConn.Insert(mysql.Statement, query, id, area, nowTime, nowTime, startip)
+		} else {
+			query = "update scanrecord set ipid = ?,updatetime = ?,startip = ? where id =?"
+			_, err = mysqlConn.Update(mysql.Statement, query, id, nowTime, startip, recordID)
+		}
+		if err != nil {
+			log.Println(err)
+		} else {
+			break
+		}
+	}
+}
+
+func getRecord(mysqlConn *mysql.MysqlDB, area string) (int, int) {
+	query := "select id,ipid from scanrecord where area = ?"
+	var rs map[string]string
+	var err error
+	for i := 0; i < 3; i++ {
+		err = nil
+		rs, err = mysqlConn.GetRow(mysql.Statement, query, area)
+		if err == nil {
+			break
+		}
+	}
+	if err != nil {
+		log.Println(err)
+		return 0, 0
+	}
+	idstr := rs["id"]
+	idipstr := rs["ipid"]
+	id, err2 := strconv.Atoi(idstr)
+	ipid, err3 := strconv.Atoi(idipstr)
+	if err2 != nil || err3 != nil {
+		return 0, 0
+	}
+	return id, ipid
 }

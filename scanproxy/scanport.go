@@ -251,7 +251,7 @@ func InternetFastScan(area string, ipStep int) {
 	ch := make(chan map[string]int, queueMaxConcurrent)
 	for i := 1; i <= totalPage; i++ {
 		iplist = nil
-		for j := 0; j < 10; j++ {
+		for j := 0; j < 3; j++ {
 			ipmap, _, totalPage, err = getApnicIP(area, i, ipStep)
 			if err != nil {
 				log.Println(err)
