@@ -26,6 +26,7 @@ func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, in
 		return nil, 0, 0, errors.New("area is error")
 	}
 	var query string
+restart:
 	recordID, IPID := getRecord(mysqlConn, area)
 	if area != "" {
 		query = "select id,startip,area from apniciplib where area = ? and id > ?" + paginate
@@ -35,6 +36,10 @@ func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, in
 	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area, IPID)
 	if err != nil {
 		return nil, 0, 0, err
+	}
+	if len(iplist) == 0 {
+		saveRecord(mysqlConn, 0, recordID, "", area)
+		goto restart
 	}
 	idstr := iplist[len(iplist)-1]["id"]
 	startIP := iplist[len(iplist)-1]["startip"]
