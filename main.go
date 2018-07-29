@@ -2,8 +2,8 @@ package main
 
 import (
 	"flag"
+	"github.com/JimYJ/scanproxy/scanproxy"
 	"log"
-	"scanproxy/scanproxy"
 
 	"github.com/JimYJ/easysql/mysql"
 )
