@@ -11,7 +11,7 @@ scanproxy is auto scan IP &amp; port,and check that is proxy if port is open...(
   -i  set scan how many IP segment in same times, it will affect memory footprint (default 10)<br>
   -m  maximum concurrency number (default 200)<br>
 <br>
- e.g.
-  ```
-  scanproxy_linux_amd64 -a JP -f -m 1000 -i 20
-  ``` 
+e.g.
+```
+scanproxy_linux_amd64 -a JP -f -m 1000 -i 20
+``` 
