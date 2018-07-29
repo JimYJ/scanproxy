@@ -1,10 +1,10 @@
 package scanproxy
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
-	"strconv"
 	"sync"
 	"time"
 
@@ -80,9 +80,9 @@ func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
 }
 
 //checkPortBySynForQueue syn方式查询端口是否开放，仅支持linux2.4+ 队列专用函数
-func checkPortBySynForQueue(value ...interface{}) {
+func checkPortBySynForQueue(value ...interface{}) error {
 	if len(value) < 3 {
-		return
+		return errors.New("value len is error")
 	}
 	ipstr := value[0].(string)
 	port := value[1].(int)
@@ -114,6 +114,7 @@ func checkPortBySynForQueue(value ...interface{}) {
 		// }
 		ch <- nil
 	}
+	return err
 }
 
 func scanPort(iplist *[]string, startPort int, stepMax int) (*[]map[string]int, int) {
@@ -247,7 +248,7 @@ func InternetFastScan(area string, ipStep int) {
 	var ipmap *[]map[string]string
 	var err error
 	var iplist []string
-	queue.InitQueue(queueMaxConcurrent, false)
+	queue.InitQueue(queueMaxConcurrent, false, false)
 	ch := make(chan map[string]int, queueMaxConcurrent)
 	for i := 1; i <= totalPage; i++ {
 		iplist = nil
@@ -272,10 +273,9 @@ func InternetFastScan(area string, ipStep int) {
 }
 
 //SetQueueMaxConcurrent 设置队列并发数
-func SetQueueMaxConcurrent(maxConcurrent string) {
-	mc, err := strconv.Atoi(maxConcurrent)
-	if err != nil || mc < 1 {
+func SetQueueMaxConcurrent(maxConcurrent int) {
+	if maxConcurrent < 1 {
 		return
 	}
-	queueMaxConcurrent = mc
+	queueMaxConcurrent = maxConcurrent
 }

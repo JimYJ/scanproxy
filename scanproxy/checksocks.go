@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"golang.org/x/net/proxy"
-	"h12.me/socks"
+	"h12.io/socks"
 )
 
 //checkSocks 测试是否是SOCKS代理，支持SOCKS4,SOCKS4a,SOCKS5

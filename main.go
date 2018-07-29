@@ -1,57 +1,32 @@
 package main
 
 import (
-	"github.com/JimYJ/scanproxy/scanproxy"
+	"flag"
 	"log"
-	"os"
-	"strconv"
+	"scanproxy/scanproxy"
 
 	"github.com/JimYJ/easysql/mysql"
 )
 
 var (
-	dbhost       = ""
-	dbport       = 3306
-	dbname       = ""
-	dbuser       = ""
-	dbpass       = ""
-	charset      = ""
-	maxIdleConns = 500
-	maxOpenConns = 500
-	ipStep       = 10
-	area         string
+	dbhost        = ""
+	dbport        = 3306
+	dbname        = ""
+	dbuser        = ""
+	dbpass        = ""
+	charset       = "utf8mb4"
+	maxIdleConns  = 500
+	maxOpenConns  = 500
+	ipStep        = 10
+	area          string
+	ipstep        int
+	mode          bool
+	maxConcurrent int
 )
 
 func main() {
-	var ipstep int
-	var err error
-	var mode string
-	var maxConcurrent string
-	if len(os.Args) >= 2 {
-		mode = os.Args[1]
-	} else {
-		mode = ""
-	}
-	if len(os.Args) >= 3 {
-		ipstep, err = strconv.Atoi(os.Args[2])
-		if err != nil {
-			ipstep = ipStep
-		}
-	} else {
-		ipstep = ipStep
-	}
-	if len(os.Args) >= 4 {
-		area = os.Args[3]
-	} else {
-		area = ""
-	}
 	initDBConn()
-	if mode == "-f" {
-		if len(os.Args) >= 5 {
-			maxConcurrent = os.Args[4]
-		} else {
-			maxConcurrent = "200"
-		}
+	if mode {
 		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area, "maxConcurrent:", maxConcurrent)
 		scanproxy.SetQueueMaxConcurrent(maxConcurrent)
 		scanproxy.InternetFastScan(area, ipstep)
@@ -59,6 +34,14 @@ func main() {
 		log.Println("now work in normal mode,ip scan step:", ipstep, "area:", area)
 		scanproxy.InternetAllScan(area, ipstep)
 	}
+}
+
+func init() {
+	flag.BoolVar(&mode, "f", false, "scan mode, fast is only scan common port, default is scan all port(shorthand)")
+	flag.IntVar(&ipstep, "i", 10, "set scan how many IP segment in same times, it will affect memory footprint(shorthand)")
+	flag.IntVar(&maxConcurrent, "m", 200, "maximum concurrency number(shorthand)")
+	flag.StringVar(&area, "a", "CN", "country codes, see ISO 3166-1(shorthand)")
+	flag.Parse()
 }
 
 func initDBConn() {

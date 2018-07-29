@@ -2,6 +2,7 @@ package scanproxy
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -29,9 +30,9 @@ func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, in
 restart:
 	recordID, IPID := getRecord(mysqlConn, area)
 	if area != "" {
-		query = "select id,startip,area from apniciplib where area = ? and id > ?" + paginate
+		query = fmt.Sprintf("select id,startip,area from apniciplib where area = ? and id > ? %s", paginate)
 	} else {
-		query = "select id,startip,area from apniciplib id < ?" + paginate
+		query = fmt.Sprintf("select id,startip,area from apniciplib where id < ? %s", paginate)
 	}
 	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area, IPID)
 	if err != nil {
@@ -65,10 +66,10 @@ func paginate(area string, curPage int, prePage int) (string, int, int) {
 		curPage = totalPage
 	}
 	if curPage == 0 || curPage == 1 {
-		return " limit 0," + strconv.Itoa(prePage), ipCount, totalPage
+		return "limit 0," + strconv.Itoa(prePage), ipCount, totalPage
 	}
 	start := (curPage - 1) * prePage
-	return " limit " + strconv.Itoa(start) + "," + strconv.Itoa(prePage), ipCount, totalPage
+	return "limit " + strconv.Itoa(start) + "," + strconv.Itoa(prePage), ipCount, totalPage
 }
 
 func getTotalPage(prePage int) int {
