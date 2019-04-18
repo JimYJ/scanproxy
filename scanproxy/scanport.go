@@ -167,7 +167,11 @@ func scanAllPort(iplist *[]string) *[]map[string]int {
 }
 
 //scanFastPort 快速扫描常用端口,将请求发送到队列
-func scanFastPort(iplist *[]string, getArea string, ch chan map[string]int) {
+func scanFastPort(iplist *[]string, getarea interface{}, ch chan map[string]int) {
+	getArea, ok := getarea.(string)
+	if !ok {
+		return
+	}
 	listenQueueResults(ch, getArea)
 	for n := 0; n <= len(fastScanPort)-1; n++ {
 		// log.Println("scan port:", n)
@@ -215,7 +219,7 @@ func listenQueueResults(ch chan map[string]int, getArea string) {
 //InternetAllScan 全部IP或指定区域IP扫描全端口
 func InternetAllScan(area string, ipStep int) {
 	totalPage := 1
-	var ipmap *[]map[string]string
+	var ipmap *[]map[string]interface{}
 	var err error
 	var iplist []string
 	for i := 1; i <= totalPage; i++ {
@@ -245,7 +249,7 @@ func InternetAllScan(area string, ipStep int) {
 //InternetFastScan 常用代理端口快速扫描
 func InternetFastScan(area string, ipStep int) {
 	totalPage := 1
-	var ipmap *[]map[string]string
+	var ipmap *[]map[string]interface{}
 	var err error
 	var iplist []string
 	queue.InitQueue(queueMaxConcurrent, false, false)

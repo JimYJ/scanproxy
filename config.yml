@@ -1,0 +1,6 @@
+mysql :
+  host : your host
+  port : 3306
+  user : your user
+  pass : your pass
+  name : yser rable

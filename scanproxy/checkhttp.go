@@ -13,8 +13,8 @@ import (
 
 var (
 	timeouts    = 10
-	testWeb     = "http://cn.ssgdfm.com/shop/main"
-	testKeyWord = "SKINSEGAE"
+	testWeb     = "http://www.zmhui.net/"
+	testKeyWord = "miaotuApp"
 )
 
 //checkHTTP 测试是否是HTTP代理服务器

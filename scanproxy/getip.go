@@ -8,52 +8,48 @@ import (
 	"strings"
 	"time"
 
-	"github.com/JimYJ/easysql/mysql"
+	"github.com/JimYJ/scanproxy/config"
 )
 
 var (
 	//ipCount 可扫描IP总数
-	ipCount = 0
+	ipCount int64 = 0
 )
 
 //getApnicIP 获取可扫描IP列表
-func getApnicIP(area string, curPage int, prePage int) (*[]map[string]string, int, int, error) {
-	mysqlConn, err := mysql.GetMysqlConn()
-	if err != nil {
-		return nil, 0, 0, err
-	}
+func getApnicIP(area string, curPage int, prePage int) (*[]map[string]interface{}, int64, int, error) {
+	mysqlDB := config.MySQL()
 	paginate, total, totalPage := paginate(area, curPage, prePage)
 	if total == 0 || totalPage == 0 {
 		return nil, 0, 0, errors.New("area is error")
 	}
 	var query string
 restart:
-	recordID, IPID := getRecord(mysqlConn, area)
+	recordID, IPID := getRecord(area)
 	if area != "" {
 		query = fmt.Sprintf("select id,startip,area from apniciplib where area = ? and id > ? %s", paginate)
 	} else {
 		query = fmt.Sprintf("select id,startip,area from apniciplib where id < ? %s", paginate)
 	}
-	iplist, err := mysqlConn.GetResults(mysql.Statement, query, area, IPID)
+	iplist, err := mysqlDB.GetResults(query, area, IPID)
 	if err != nil {
 		return nil, 0, 0, err
 	}
 	if len(iplist) == 0 {
-		saveRecord(mysqlConn, 0, recordID, "", area)
+		saveRecord(0, recordID, "", area)
 		goto restart
 	}
-	idstr := iplist[len(iplist)-1]["id"]
 	startIP := iplist[len(iplist)-1]["startip"]
-	id, err2 := strconv.Atoi(idstr)
-	if err2 == nil {
-		saveRecord(mysqlConn, id, recordID, startIP, area)
+	id, ok := iplist[len(iplist)-1]["id"].(int64)
+	if !ok {
+		saveRecord(id, recordID, startIP, area)
 	} else {
-		log.Println(err2)
+		log.Println("get ip list error")
 	}
 	return &iplist, total, totalPage, nil
 }
 
-func paginate(area string, curPage int, prePage int) (string, int, int) {
+func paginate(area string, curPage int, prePage int) (string, int64, int) {
 	if ipCount == 0 {
 		getIPCount(area)
 		if ipCount == 0 {
@@ -66,15 +62,15 @@ func paginate(area string, curPage int, prePage int) (string, int, int) {
 		curPage = totalPage
 	}
 	if curPage == 0 || curPage == 1 {
-		return "limit 0," + strconv.Itoa(prePage), ipCount, totalPage
+		return fmt.Sprintf("limit 0,%d", prePage), ipCount, totalPage
 	}
 	start := (curPage - 1) * prePage
 	return "limit " + strconv.Itoa(start) + "," + strconv.Itoa(prePage), ipCount, totalPage
 }
 
 func getTotalPage(prePage int) int {
-	totalPage := ipCount / prePage
-	if ipCount%prePage != 0 {
+	totalPage := int(ipCount) / prePage
+	if int(ipCount)%prePage != 0 {
 		totalPage++
 	}
 	return totalPage
@@ -82,21 +78,18 @@ func getTotalPage(prePage int) int {
 
 //getIPCount 获取IP总数
 func getIPCount(area string) error {
-	mysqlConn, err := mysql.GetMysqlConn()
-	if err != nil {
-		return err
-	}
+	mysqlConn := config.MySQL()
 	var query string
 	if area != "" {
 		query = "select count(id) as count from apniciplib where area = ?"
 	} else {
 		query = "select count(id) as count from apniciplib"
 	}
-	count, err := mysqlConn.GetVal(mysql.Statement, query, area)
+	count, err := mysqlConn.GetVal(query, area)
 	if err != nil {
 		return err
 	}
-	ipCount, _ = strconv.Atoi(count)
+	ipCount = count.(int64)
 	return nil
 }
 
@@ -106,12 +99,16 @@ func getIPLocalNetwork() []string {
 	var iplist = make([]string, 255)
 	for i := 1; i < 256; i++ {
 		a = i - 1
-		iplist[a] = "192.168.10." + strconv.Itoa(i)
+		iplist[a] = fmt.Sprintf("192.168.10.%d", i)
 	}
 	return iplist
 }
 
-func formatInternetIPList(ipsatrt string) []string {
+func formatInternetIPList(ips interface{}) []string {
+	ipsatrt, ok := ips.(string)
+	if !ok {
+		return nil
+	}
 	var iplist = make([]string, 0)
 	b := strings.Split(ipsatrt, ".")
 	c := strings.Join(b[0:len(b)-1], ".")
@@ -121,17 +118,18 @@ func formatInternetIPList(ipsatrt string) []string {
 	return iplist
 }
 
-func saveRecord(mysqlConn *mysql.MysqlDB, id int, recordID int, startip string, area string) {
+func saveRecord(id, recordID int64, startip interface{}, area string) {
+	mysqlConn := config.MySQL()
 	var query string
 	nowTime := time.Now().Local().Format("2006-01-02 15:04:05")
 	var err error
 	for i := 0; i < 3; i++ {
 		if recordID == 0 {
 			query = "insert scanrecord set ipid = ?,area = ?,createtime = ?,updatetime = ?,startip = ?"
-			_, err = mysqlConn.Insert(mysql.Statement, query, id, area, nowTime, nowTime, startip)
+			_, err = mysqlConn.Insert(query, id, area, nowTime, nowTime, startip)
 		} else {
 			query = "update scanrecord set ipid = ?,updatetime = ?,startip = ? where id =?"
-			_, err = mysqlConn.Update(mysql.Statement, query, id, nowTime, startip, recordID)
+			_, err = mysqlConn.Update(query, id, nowTime, startip, recordID)
 		}
 		if err != nil {
 			log.Println(err)
@@ -141,13 +139,14 @@ func saveRecord(mysqlConn *mysql.MysqlDB, id int, recordID int, startip string, 
 	}
 }
 
-func getRecord(mysqlConn *mysql.MysqlDB, area string) (int, int) {
+func getRecord(area string) (int64, int64) {
+	mysqlConn := config.MySQL()
 	query := "select id,ipid from scanrecord where area = ?"
-	var rs map[string]string
+	var rs map[string]interface{}
 	var err error
 	for i := 0; i < 3; i++ {
 		err = nil
-		rs, err = mysqlConn.GetRow(mysql.Statement, query, area)
+		rs, err = mysqlConn.GetRow(query, area)
 		if err == nil {
 			break
 		}
@@ -156,11 +155,9 @@ func getRecord(mysqlConn *mysql.MysqlDB, area string) (int, int) {
 		log.Println(err)
 		return 0, 0
 	}
-	idstr := rs["id"]
-	idipstr := rs["ipid"]
-	id, err2 := strconv.Atoi(idstr)
-	ipid, err3 := strconv.Atoi(idipstr)
-	if err2 != nil || err3 != nil {
+	id, ok := rs["id"].(int64)
+	ipid, ok2 := rs["ipid"].(int64)
+	if !ok || !ok2 {
 		return 0, 0
 	}
 	return id, ipid

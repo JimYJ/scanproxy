@@ -3,53 +3,49 @@ package scanproxy
 import (
 	"errors"
 	"log"
-	"strconv"
 	"time"
 
-	"github.com/JimYJ/easysql/mysql"
+	"github.com/JimYJ/scanproxy/config"
 )
 
-func saveProxy(proxyList *[]map[string]string, area string) (bool, error) {
+func saveProxy(proxyList *[]map[string]string, area interface{}) (bool, error) {
 	if proxyList == nil {
 		return false, errors.New("proxyList is nil")
 	}
-	mysqlDB, err := mysql.GetMysqlConn()
-	if err != nil {
-		log.Panic(err)
-	}
+	mysqlDB := config.MySQL()
 	rollBack := false
 	var err2 error
 	nowTime := time.Now().Local().Format("2006-01-02 15:04:05")
-	var proxyExist = make([]int, len(*proxyList))
+	var proxyExist = make([]int64, len(*proxyList))
 	for i := 0; i < len(*proxyList); i++ {
-		checkExist, err := mysqlDB.GetVal(mysql.Statement, "select id from proxyip where ip = ? and port = ? and protocol = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"])
-		if err != nil || checkExist == "" {
+		checkExist, err := mysqlDB.GetVal("select id from proxyip where ip = ? and port = ? and protocol = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"])
+		if err != nil || checkExist == nil {
 			proxyExist[i] = 0
 		} else {
-			id, err := strconv.Atoi(checkExist)
-			if err == nil {
+			id, ok := checkExist.(int64)
+			if ok {
 				proxyExist[i] = id
 			} else {
 				proxyExist[i] = 0
 			}
 		}
 	}
-	mysqlDB.TxBegin()
+	tx, _ := mysqlDB.Begin()
 	for i := 0; i < len(*proxyList); i++ {
 		if proxyExist[i] == 0 {
-			_, err2 = mysqlDB.TxInsert(mysql.Statement, "insert into proxyip set ip = ?,port = ?,protocol = ?,area = ?,status = ?,createtime = ?,updatetime = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"], area, 1, nowTime, nowTime)
+			_, err2 = tx.Insert("insert into proxyip set ip = ?,port = ?,protocol = ?,area = ?,status = ?,createtime = ?,updatetime = ?", (*proxyList)[i]["ip"], (*proxyList)[i]["port"], (*proxyList)[i]["protocol"], area, 1, nowTime, nowTime)
 		} else {
-			_, err2 = mysqlDB.TxUpdate(mysql.Statement, "update proxyip set updatetime = ? where id = ?", nowTime, proxyExist[i])
+			_, err2 = tx.Update("update proxyip set updatetime = ? where id = ?", nowTime, proxyExist[i])
 		}
 		if err2 != nil {
 			rollBack = true
 		}
 	}
 	if rollBack {
-		mysqlDB.TxRollback()
+		tx.Rollback()
 		return false, err2
 	}
-	mysqlDB.TxCommit()
+	tx.Commit()
 	log.Println("save proxy:", proxyList)
 	return true, nil
 }

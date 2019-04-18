@@ -2,21 +2,12 @@ package main
 
 import (
 	"flag"
-	"github.com/JimYJ/scanproxy/scanproxy"
 	"log"
 
-	"github.com/JimYJ/easysql/mysql"
+	"github.com/JimYJ/scanproxy/scanproxy"
 )
 
 var (
-	dbhost        = ""
-	dbport        = 3306
-	dbname        = ""
-	dbuser        = ""
-	dbpass        = ""
-	charset       = "utf8mb4"
-	maxIdleConns  = 500
-	maxOpenConns  = 500
 	ipStep        = 10
 	area          string
 	ipstep        int
@@ -25,7 +16,6 @@ var (
 )
 
 func main() {
-	initDBConn()
 	if mode {
 		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area, "maxConcurrent:", maxConcurrent)
 		scanproxy.SetQueueMaxConcurrent(maxConcurrent)
@@ -42,12 +32,4 @@ func init() {
 	flag.IntVar(&maxConcurrent, "m", 200, "maximum concurrency number(shorthand)")
 	flag.StringVar(&area, "a", "CN", "country codes, see ISO 3166-1(shorthand)")
 	flag.Parse()
-}
-
-func initDBConn() {
-	mysql.Init(dbhost, dbport, dbname, dbuser, dbpass, charset, maxIdleConns, maxOpenConns)
-	_, err := mysql.GetMysqlConn()
-	if err != nil {
-		log.Panic(err)
-	}
 }
