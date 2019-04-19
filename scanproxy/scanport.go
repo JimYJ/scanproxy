@@ -50,6 +50,7 @@ func checkPort(ipstr string, port int, ch chan map[string]int) {
 
 //checkPortBySyn syn方式查询端口是否开放，仅支持linux2.4+
 func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
+	defer HandelRecover()
 	ip := net.ParseIP(ipstr)
 	if ip == nil {
 		log.Println("error IP format:", ipstr)
@@ -81,6 +82,7 @@ func checkPortBySyn(ipstr string, port int, ch chan map[string]int) {
 
 //checkPortBySynForQueue syn方式查询端口是否开放，仅支持linux2.4+ 队列专用函数
 func checkPortBySynForQueue(value ...interface{}) error {
+	defer HandelRecover()
 	if len(value) < 3 {
 		return errors.New("value len is error")
 	}
