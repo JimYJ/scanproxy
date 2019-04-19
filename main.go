@@ -4,6 +4,8 @@ import (
 	"flag"
 	"log"
 
+	"github.com/JimYJ/scanproxy/config"
+
 	"github.com/JimYJ/scanproxy/scanproxy"
 )
 
@@ -16,6 +18,8 @@ var (
 )
 
 func main() {
+	mysql := config.MySQL()
+	defer mysql.Close()
 	if mode {
 		log.Println("now work in fast mode,ip scan step:", ipstep, "area:", area, "maxConcurrent:", maxConcurrent)
 		scanproxy.SetQueueMaxConcurrent(maxConcurrent)
