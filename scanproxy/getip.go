@@ -41,10 +41,10 @@ restart:
 	}
 	startIP := iplist[len(iplist)-1]["startip"]
 	id, ok := iplist[len(iplist)-1]["id"].(int64)
-	if !ok {
+	if ok {
 		saveRecord(id, recordID, startIP, area)
 	} else {
-		log.Println("get ip list error")
+		log.Println("get ip list error!")
 	}
 	return &iplist, total, totalPage, nil
 }
